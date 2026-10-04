@@ -10,7 +10,10 @@ export class RazorpayConfigurationError extends Error {
 
 export function razorpayCredentials(requireWebhookSecret = false) {
   const env = getEnv();
-  const keyPrefix = env.NODE_ENV === "production" ? "rzp_live_" : "rzp_test_";
+  const keyPrefix =
+    process.env.APP_ENV === "staging" ? "rzp_test_" :
+    env.NODE_ENV === "production" ? "rzp_live_" :
+    "rzp_test_";
   if (!env.RAZORPAY_KEY_ID?.startsWith(keyPrefix) || !env.RAZORPAY_KEY_SECRET) {
     throw new RazorpayConfigurationError();
   }
@@ -26,7 +29,7 @@ export function razorpayCredentials(requireWebhookSecret = false) {
 
 export function sellerInvoiceDetails() {
   const env = getEnv();
-  if (!env.SELLER_NAME || !env.SELLER_ADDRESS || !env.SELLER_GSTIN) {
+  if (!env.SELLER_NAME || !env.SELLER_ADDRESS) {
     throw new RazorpayConfigurationError(en.billing.sellerSetup);
   }
   return { name: env.SELLER_NAME, address: env.SELLER_ADDRESS, gstin: env.SELLER_GSTIN };

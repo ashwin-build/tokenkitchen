@@ -8,7 +8,6 @@ const required = [
   "RAZORPAY_WEBHOOK_SECRET",
   "SELLER_NAME",
   "SELLER_ADDRESS",
-  "SELLER_GSTIN",
 ];
 
 export function assertProductionEnvironment(environment = process.env) {
@@ -21,7 +20,7 @@ export function assertProductionEnvironment(environment = process.env) {
   if (["localhost", "127.0.0.1", "::1"].includes(appUrl.hostname)) {
     throw new Error("NEXT_PUBLIC_APP_URL must use the public production URL.");
   }
-  if (!environment.RAZORPAY_KEY_ID.startsWith("rzp_live_")) {
-    throw new Error("Production startup requires an rzp_live_ Razorpay key.");
+  if (!/^rzp_(test|live)_/.test(environment.RAZORPAY_KEY_ID)) {
+    throw new Error("RAZORPAY_KEY_ID must be a valid Razorpay test or live key.");
   }
 }
