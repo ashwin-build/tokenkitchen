@@ -7,7 +7,11 @@ COPY package.json package-lock.json ./
 RUN npm ci
 
 FROM dependencies AS build
+
+ARG DATABASE_URL
+
 COPY . .
+
 RUN npm run db:generate && npm run build
 
 FROM base AS runner
