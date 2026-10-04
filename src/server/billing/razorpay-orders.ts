@@ -150,6 +150,13 @@ export async function createRazorpayOrderForMembership(
     });
 
     const raw: unknown = await response.json().catch(() => null);
+
+    console.error("[checkout] Razorpay response", {
+      status: response.status,
+      ok: response.ok,
+      body: raw,
+      expectedAmount: tax.totalPaise,
+    });
     const verifiedOrder = razorpayOrderSchema.safeParse(raw);
     if (!response.ok || !verifiedOrder.success || verifiedOrder.data.amount !== tax.totalPaise) {
       await systemTenantDatabase(membership.tenantId).paymentAttempt.updateMany({
