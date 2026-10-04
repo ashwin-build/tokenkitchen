@@ -11,12 +11,7 @@ import {
   saveIngredientForMembership,
 } from "@/server/catalog/services";
 
-export type CatalogActionState = {
-  status: "idle" | "success" | "error";
-  message: string;
-};
-
-export const initialCatalogActionState: CatalogActionState = { status: "idle", message: "" };
+import type { CatalogActionState } from "@/server/catalog/action-state";
 
 function fields(formData: FormData, names: string[]) {
   return Object.fromEntries(names.map((name) => [name, formData.get(name)]));

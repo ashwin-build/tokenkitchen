@@ -5,16 +5,18 @@ import { useRouter } from "next/navigation";
 import {
   archiveDishAction,
   archiveIngredientAction,
-  initialCatalogActionState,
   saveDishAction,
   saveIngredientAction,
 } from "@/server/catalog/actions";
 import {
   confirmCatalogImportAction,
-  initialCatalogImportState,
   previewCatalogImportAction,
 } from "@/server/catalog/import-actions";
 import type { CatalogImportKind } from "@/server/catalog/import-format";
+import {
+  initialCatalogActionState,
+  initialCatalogImportState,
+} from "@/server/catalog/action-state";
 
 type IngredientItem = {
   id: string;

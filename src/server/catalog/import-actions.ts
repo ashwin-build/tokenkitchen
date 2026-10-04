@@ -7,17 +7,7 @@ import { assertCatalogEditor } from "@/server/catalog/permissions";
 import { CatalogImportError, confirmCatalogImport, previewCatalogImport, type CatalogImportPreview } from "@/server/catalog/imports";
 import { MAX_CSV_BYTES } from "@/server/catalog/csv";
 
-export type CatalogImportActionState = {
-  status: "idle" | "preview" | "success" | "error";
-  message: string;
-  preview: CatalogImportPreview | null;
-};
-
-export const initialCatalogImportState: CatalogImportActionState = {
-  status: "idle",
-  message: "",
-  preview: null,
-};
+import type { CatalogImportActionState } from "@/server/catalog/action-state";
 
 const importRequestSchema = z.object({
   kind: z.enum(["ingredients", "dishes"]),
