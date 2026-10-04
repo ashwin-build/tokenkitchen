@@ -1,0 +1,170 @@
+@import "tailwindcss";
+
+:root {
+  color-scheme: light;
+  --forest: #14302a;
+  --turmeric: #e8b230;
+  --chilli: #d6402b;
+  --paper: #f5f4ef;
+  --ink: #18231f;
+  --muted: #66736d;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: "Avenir Next", Avenir, "Segoe UI", sans-serif;
+}
+
+button,
+input,
+select {
+  font: inherit;
+}
+
+.tk-button-primary,
+.tk-button-secondary,
+.tk-button-danger {
+  display: inline-flex;
+  min-height: 44px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  padding: 0 16px;
+  font-size: 14px;
+  font-weight: 600;
+  transition: background-color 120ms ease, border-color 120ms ease;
+}
+
+.tk-button-primary {
+  border: 1px solid var(--forest);
+  background: var(--forest);
+  color: white;
+}
+
+.tk-button-primary:hover:not(:disabled) {
+  background: #20453b;
+}
+
+.tk-button-secondary {
+  border: 1px solid rgb(20 48 42 / 22%);
+  background: white;
+  color: var(--forest);
+}
+
+.tk-button-secondary:hover:not(:disabled) {
+  background: var(--paper);
+}
+
+.tk-button-danger {
+  border: 1px solid rgb(214 64 43 / 35%);
+  background: white;
+  color: var(--chilli);
+}
+
+.tk-button-danger:hover:not(:disabled) {
+  background: #fff1ee;
+}
+
+.tk-button-primary:disabled,
+.tk-button-secondary:disabled,
+.tk-button-danger:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.tk-field {
+  display: grid;
+  gap: 7px;
+  color: var(--ink);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.tk-field input,
+.tk-field select,
+.tk-search input {
+  min-height: 48px;
+  width: 100%;
+  border: 1px solid rgb(20 48 42 / 20%);
+  border-radius: 6px;
+  background: white;
+  padding: 0 12px;
+  outline: none;
+}
+
+.tk-field input:focus,
+.tk-field select:focus,
+.tk-search input:focus {
+  border-color: var(--forest);
+}
+
+.tk-quantity-button,
+.tk-quantity-input {
+  display: grid;
+  min-height: 40px;
+  width: 40px;
+  place-items: center;
+  border: 1px solid rgb(20 48 42 / 18%);
+  border-radius: 6px;
+  background: white;
+  text-align: center;
+}
+
+.tk-quantity-button {
+  color: var(--forest);
+  font-size: 20px;
+  font-weight: 600;
+}
+
+.tk-quantity-input {
+  width: 52px;
+  padding: 0 3px;
+  font-size: 14px;
+}
+
+@media print {
+  @page {
+    margin: 8mm;
+    size: A4 portrait;
+  }
+
+  body:has([data-print-document]) header,
+  body:has([data-print-document]) nav,
+  body:has([data-print-document]) .no-print {
+    display: none !important;
+  }
+
+  body:has(.thermal-slip) {
+    background: white;
+  }
+
+  .invoice-document {
+    max-width: none !important;
+    margin: 0 !important;
+    border: 0 !important;
+    padding: 0 !important;
+  }
+
+  .thermal-slip {
+    width: var(--receipt-width) !important;
+    max-width: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    font-size: 11px !important;
+  }
+}
+
+.tk-search {
+  display: grid;
+  max-width: 32rem;
+  gap: 7px;
+  color: var(--ink);
+  font-size: 14px;
+  font-weight: 600;
+}

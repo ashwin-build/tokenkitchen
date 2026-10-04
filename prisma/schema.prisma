@@ -1,0 +1,676 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum MembershipRole {
+  OWNER
+  MANAGER
+  CASHIER
+}
+
+enum TaxMode {
+  INCLUSIVE
+  EXCLUSIVE
+}
+
+enum IngredientUnit {
+  KG  @map("kg")
+  G   @map("g")
+  L   @map("L")
+  ML  @map("ml")
+  PCS @map("pcs")
+}
+
+enum OrderChannel {
+  COUNTER
+  SWIGGY
+  ZOMATO
+  OTHER
+}
+
+enum OrderStatus {
+  PREPARING
+  READY
+  COMPLETED
+  CANCELLED
+}
+
+enum StockMode {
+  ENFORCE
+  WARN
+}
+
+enum SequenceCounterKind {
+  TOKEN
+  INVOICE
+}
+
+enum OrderAuditAction {
+  CREATED
+  STATUS_CHANGED
+  CANCELLED
+}
+
+enum PaymentMode {
+  CASH
+  UPI
+  CARD
+  BANK
+  PLATFORM_SETTLEMENT
+}
+
+enum StockMovementType {
+  OPENING
+  PURCHASE
+  SALE
+  WASTAGE
+  SPOILAGE
+  ADJUSTMENT
+  RETURN
+}
+
+enum PartyType {
+  CUSTOMER
+  SUPPLIER
+}
+
+enum LedgerDirection {
+  DEBIT
+  CREDIT
+}
+
+enum ExpenseCategory {
+  RENT
+  SALARIES
+  UTILITIES
+  SUPPLIES
+  MARKETING
+  MAINTENANCE
+  TRANSPORT
+  TAXES
+  OTHER
+}
+
+enum PlanCode {
+  QUARTERLY
+  HALF_YEARLY
+  ANNUAL
+}
+
+enum SubscriptionStatus {
+  TRIALING
+  ACTIVE
+  PAST_DUE
+  CANCELED
+  EXPIRED
+}
+
+enum PaymentProvider {
+  RAZORPAY
+}
+
+enum PaymentAttemptStatus {
+  CREATING
+  CREATED
+  PROCESSING
+  PAID
+  FAILED
+}
+
+enum IntegrationProvider {
+  SWIGGY
+  ZOMATO
+}
+
+enum WebhookProvider {
+  RAZORPAY
+  SWIGGY
+  ZOMATO
+}
+
+enum WebhookStatus {
+  RECEIVED
+  PROCESSING
+  PROCESSED
+  FAILED
+}
+
+model Tenant {
+  id                       String   @id @default(cuid())
+  name                     String
+  slug                     String   @unique
+  gstin                    String?
+  timezone                 String   @default("Asia/Kolkata")
+  businessDayCutoffMinutes Int      @default(240)
+  pricesIncludeGst         Boolean  @default(true)
+  stockMode                StockMode @default(ENFORCE)
+  createdAt                DateTime @default(now()) @db.Timestamptz(6)
+  updatedAt                DateTime @updatedAt @db.Timestamptz(6)
+
+  memberships            Membership[]
+  ingredients             Ingredient[]
+  dishes                  Dish[]
+  recipeLines             RecipeLine[]
+  orders                  Order[]
+  purchases               Purchase[]
+  sequenceCounters        SequenceCounter[]
+  orderAuditEvents        OrderAuditEvent[]
+  payments                Payment[]
+  stockMovements          StockMovement[]
+  parties                 Party[]
+  ledgerEntries           LedgerEntry[]
+  expenses                Expense[]
+  subscriptions           Subscription[]
+  subscriptionPayments    SubscriptionPayment[]
+  paymentAttempts         PaymentAttempt[]
+  subscriptionInvoices    SubscriptionInvoice[]
+  integrationConnections IntegrationConnection[]
+  webhookEvents           WebhookEvent[]
+}
+
+model Membership {
+  id          String         @id @default(cuid())
+  tenantId    String
+  clerkUserId String
+  email       String
+  displayName String?
+  role        MembershipRole @default(CASHIER)
+  isActive    Boolean        @default(true)
+  createdAt   DateTime       @default(now()) @db.Timestamptz(6)
+  updatedAt   DateTime       @updatedAt @db.Timestamptz(6)
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, id])
+  @@unique([tenantId, clerkUserId])
+  @@index([clerkUserId, isActive])
+  @@index([tenantId, isActive])
+}
+
+model Ingredient {
+  id                String   @id @default(cuid())
+  tenantId          String
+  name              String
+  unit              IngredientUnit
+  currentStock      Decimal  @default(0) @db.Decimal(12, 3)
+  reorderLevel      Decimal? @db.Decimal(12, 3)
+  unitCostPaise     Int      @default(0)
+  isActive          Boolean  @default(true)
+  createdAt         DateTime @default(now()) @db.Timestamptz(6)
+  updatedAt         DateTime @updatedAt @db.Timestamptz(6)
+
+  tenant         Tenant          @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  recipeLines    RecipeLine[]
+  stockMovements StockMovement[]
+  purchaseItems  PurchaseItem[]
+
+  @@unique([tenantId, id])
+  @@index([tenantId, name])
+  @@index([tenantId, isActive])
+}
+
+model Dish {
+  id         String   @id @default(cuid())
+  tenantId   String
+  name       String
+  pricePaise Int
+  gstRate    Int
+  isActive   Boolean  @default(true)
+  createdAt  DateTime @default(now()) @db.Timestamptz(6)
+  updatedAt  DateTime @updatedAt @db.Timestamptz(6)
+
+  tenant      Tenant       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  recipeLines RecipeLine[]
+  orderItems  OrderItem[]
+
+  @@unique([tenantId, id])
+  @@index([tenantId, name])
+  @@index([tenantId, isActive])
+}
+
+model RecipeLine {
+  id              String   @id @default(cuid())
+  tenantId        String
+  dishId          String
+  ingredientId    String
+  quantityPerDish Decimal  @db.Decimal(12, 3)
+  unit            IngredientUnit
+  createdAt       DateTime @default(now()) @db.Timestamptz(6)
+  updatedAt       DateTime @updatedAt @db.Timestamptz(6)
+
+  tenant     Tenant     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  dish       Dish       @relation(fields: [tenantId, dishId], references: [tenantId, id], onDelete: Cascade)
+  ingredient Ingredient @relation(fields: [tenantId, ingredientId], references: [tenantId, id], onDelete: Restrict)
+
+  @@unique([tenantId, id])
+  @@unique([tenantId, dishId, ingredientId])
+  @@index([tenantId, ingredientId])
+}
+
+model Order {
+  id              String       @id @default(cuid())
+  tenantId        String
+  tokenNo         Int
+  businessDate    DateTime     @db.Date
+  invoiceNo       String
+  financialYear   String       @db.VarChar(9)
+  channel         OrderChannel @default(COUNTER)
+  status          OrderStatus  @default(PREPARING)
+  taxMode         TaxMode
+  subtotalPaise   Int
+  cgstPaise       Int          @default(0)
+  sgstPaise       Int          @default(0)
+  roundOffPaise   Int          @default(0)
+  totalPaise      Int
+  paidPaise       Int          @default(0)
+  stockShortage   Boolean      @default(false)
+  idempotencyKey  String
+  partyId         String?
+  cancelReason    String?
+  cancelledByClerkUserId String?
+  cancelledAt     DateTime?    @db.Timestamptz(6)
+  externalOrderId String?
+  createdAt       DateTime     @default(now()) @db.Timestamptz(6)
+  updatedAt       DateTime     @updatedAt @db.Timestamptz(6)
+
+  tenant         Tenant          @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  party          Party?          @relation(fields: [tenantId, partyId], references: [tenantId, id], onDelete: Restrict)
+  items          OrderItem[]
+  payments       Payment[]
+  stockMovements StockMovement[]
+  ledgerEntries  LedgerEntry[]
+  auditEvents    OrderAuditEvent[]
+
+  @@unique([tenantId, id])
+  @@unique([tenantId, businessDate, tokenNo])
+  @@unique([tenantId, financialYear, invoiceNo])
+  @@unique([tenantId, idempotencyKey])
+  @@unique([tenantId, channel, externalOrderId])
+  @@index([tenantId, createdAt])
+  @@index([tenantId, status, createdAt])
+}
+
+model OrderItem {
+  id                 String   @id @default(cuid())
+  tenantId           String
+  orderId            String
+  dishId             String
+  dishName           String
+  quantity           Decimal  @db.Decimal(12, 3)
+  unit               String
+  unitPricePaise     Int
+  gstRate            Decimal  @db.Decimal(5, 2)
+  taxableAmountPaise Int
+  cgstPaise          Int      @default(0)
+  sgstPaise          Int      @default(0)
+  totalPaise         Int
+  createdAt          DateTime @default(now()) @db.Timestamptz(6)
+
+  order Order @relation(fields: [tenantId, orderId], references: [tenantId, id], onDelete: Restrict)
+  dish  Dish  @relation(fields: [tenantId, dishId], references: [tenantId, id], onDelete: Restrict)
+
+  @@unique([tenantId, id])
+  @@index([tenantId, orderId])
+  @@index([tenantId, dishId])
+}
+
+model Payment {
+  id             String      @id @default(cuid())
+  tenantId       String
+  orderId        String
+  mode           PaymentMode
+  amountPaise    Int
+  changePaise    Int         @default(0)
+  providerRef    String?
+  createdAt      DateTime    @default(now()) @db.Timestamptz(6)
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  order  Order  @relation(fields: [tenantId, orderId], references: [tenantId, id], onDelete: Restrict)
+
+  @@unique([tenantId, id])
+  @@index([tenantId, orderId, createdAt])
+  @@index([tenantId, mode, createdAt])
+}
+
+model SequenceCounter {
+  id        String              @id @default(cuid())
+  tenantId  String
+  kind      SequenceCounterKind
+  periodKey String
+  value     Int                 @default(0)
+  updatedAt DateTime            @updatedAt @db.Timestamptz(6)
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, kind, periodKey])
+  @@index([tenantId])
+}
+
+model OrderAuditEvent {
+  id               String          @id @default(cuid())
+  tenantId         String
+  orderId          String
+  actorClerkUserId String
+  action           OrderAuditAction
+  fromStatus       OrderStatus?
+  toStatus         OrderStatus?
+  reason           String?
+  createdAt        DateTime        @default(now()) @db.Timestamptz(6)
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  order  Order  @relation(fields: [tenantId, orderId], references: [tenantId, id], onDelete: Restrict)
+
+  @@unique([tenantId, id])
+  @@index([tenantId, orderId, createdAt])
+}
+
+model StockMovement {
+  id            String            @id @default(cuid())
+  tenantId      String
+  ingredientId  String
+  orderId       String?
+  purchaseId    String?
+  type          StockMovementType
+  quantityDelta Decimal           @db.Decimal(12, 3)
+  unitCostPaise Int?
+  notes         String?
+  createdByClerkUserId String?
+  createdAt     DateTime          @default(now()) @db.Timestamptz(6)
+
+  tenant     Tenant     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  ingredient Ingredient @relation(fields: [tenantId, ingredientId], references: [tenantId, id], onDelete: Restrict)
+  order      Order?     @relation(fields: [tenantId, orderId], references: [tenantId, id], onDelete: Restrict)
+  purchase   Purchase?  @relation(fields: [tenantId, purchaseId], references: [tenantId, id], onDelete: Restrict)
+
+  @@unique([tenantId, id])
+  @@index([tenantId, ingredientId, createdAt])
+  @@index([tenantId, orderId])
+  @@index([tenantId, purchaseId])
+  @@index([tenantId, type, createdAt])
+}
+
+model Party {
+  id        String    @id @default(cuid())
+  tenantId  String
+  type      PartyType
+  name      String
+  phone     String?
+  email     String?
+  gstin     String?
+  isActive  Boolean   @default(true)
+  createdAt DateTime  @default(now()) @db.Timestamptz(6)
+  updatedAt DateTime  @updatedAt @db.Timestamptz(6)
+
+  tenant        Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  orders        Order[]
+  purchases     Purchase[]
+  ledgerEntries LedgerEntry[]
+  expenses      Expense[]
+
+  @@unique([tenantId, id])
+  @@index([tenantId, type, name])
+}
+
+model LedgerEntry {
+  id          String          @id @default(cuid())
+  tenantId    String
+  partyId     String?
+  orderId     String?
+  purchaseId  String?
+  direction   LedgerDirection
+  amountPaise Int
+  description String
+  occurredAt  DateTime        @default(now()) @db.Timestamptz(6)
+  createdAt   DateTime        @default(now()) @db.Timestamptz(6)
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  party  Party? @relation(fields: [tenantId, partyId], references: [tenantId, id], onDelete: Restrict)
+  order  Order? @relation(fields: [tenantId, orderId], references: [tenantId, id], onDelete: Restrict)
+  purchase Purchase? @relation(fields: [tenantId, purchaseId], references: [tenantId, id], onDelete: Restrict)
+
+  @@unique([tenantId, id])
+  @@index([tenantId, partyId, occurredAt])
+  @@index([tenantId, orderId])
+  @@index([tenantId, purchaseId])
+}
+
+model Purchase {
+  id                    String      @id @default(cuid())
+  tenantId              String
+  supplierId            String
+  idempotencyKey        String
+  totalPaise            Int
+  paidPaise             Int         @default(0)
+  paymentMode           PaymentMode?
+  createdByClerkUserId  String
+  createdAt             DateTime    @default(now()) @db.Timestamptz(6)
+
+  tenant        Tenant          @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  supplier      Party           @relation(fields: [tenantId, supplierId], references: [tenantId, id], onDelete: Restrict)
+  items         PurchaseItem[]
+  stockMovements StockMovement[]
+  ledgerEntries LedgerEntry[]
+
+  @@unique([tenantId, id])
+  @@unique([tenantId, idempotencyKey])
+  @@index([tenantId, supplierId, createdAt])
+}
+
+model PurchaseItem {
+  id             String         @id @default(cuid())
+  tenantId       String
+  purchaseId     String
+  ingredientId   String
+  ingredientName String
+  quantity       Decimal        @db.Decimal(12, 3)
+  unit           IngredientUnit
+  unitCostPaise  Int
+  amountPaise    Int
+  createdAt      DateTime       @default(now()) @db.Timestamptz(6)
+
+  purchase   Purchase   @relation(fields: [tenantId, purchaseId], references: [tenantId, id], onDelete: Restrict)
+  ingredient Ingredient @relation(fields: [tenantId, ingredientId], references: [tenantId, id], onDelete: Restrict)
+
+  @@unique([tenantId, id])
+  @@index([tenantId, purchaseId])
+  @@index([tenantId, ingredientId])
+}
+
+model Expense {
+  id            String          @id @default(cuid())
+  tenantId      String
+  partyId       String?
+  category      ExpenseCategory
+  description   String
+  subtotalPaise Int
+  cgstPaise     Int             @default(0)
+  sgstPaise     Int             @default(0)
+  totalPaise    Int
+  occurredAt    DateTime        @default(now()) @db.Timestamptz(6)
+  createdAt     DateTime        @default(now()) @db.Timestamptz(6)
+  updatedAt     DateTime        @updatedAt @db.Timestamptz(6)
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  party  Party? @relation(fields: [tenantId, partyId], references: [tenantId, id], onDelete: Restrict)
+
+  @@unique([tenantId, id])
+  @@index([tenantId, occurredAt])
+  @@index([tenantId, category, occurredAt])
+}
+
+model PlanCatalog {
+  id                  String   @id @default(cuid())
+  code                PlanCode @unique
+  name                String
+  periodDays          Int      @default(90)
+  amountPaise         Int
+  /// Confirm GST inclusion and the default 18% rate with the CA before production charging.
+  gstInclusive        Boolean  @default(true)
+  gstRate             Decimal  @default(18.00) @db.Decimal(5, 2)
+  taxReviewRequired   Boolean  @default(true)
+  isActive            Boolean  @default(true)
+  createdAt           DateTime @default(now()) @db.Timestamptz(6)
+  updatedAt           DateTime @updatedAt @db.Timestamptz(6)
+
+  subscriptions   Subscription[]
+  paymentAttempts PaymentAttempt[]
+}
+
+model Subscription {
+  id                     String             @id @default(cuid())
+  tenantId               String
+  planCatalogId          String?
+  status                 SubscriptionStatus
+  provider               PaymentProvider?
+  providerCustomerId     String?
+  providerSubscriptionId String?            @unique
+  billingGstin           String?
+  trialStartedAt         DateTime?           @db.Timestamptz(6)
+  trialEndsAt            DateTime?           @db.Timestamptz(6)
+  currentPeriodStartedAt DateTime?           @db.Timestamptz(6)
+  currentPeriodEndsAt    DateTime?           @db.Timestamptz(6)
+  canceledAt             DateTime?           @db.Timestamptz(6)
+  createdAt              DateTime             @default(now()) @db.Timestamptz(6)
+  updatedAt              DateTime             @updatedAt @db.Timestamptz(6)
+
+  tenant             Tenant               @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  planCatalog        PlanCatalog?         @relation(fields: [planCatalogId], references: [id], onDelete: SetNull)
+  subscriptionPayments SubscriptionPayment[]
+  paymentAttempts    PaymentAttempt[]
+  invoices           SubscriptionInvoice[]
+
+  @@unique([tenantId, id])
+  @@index([tenantId, status])
+}
+
+model SubscriptionPayment {
+  id                  String   @id @default(cuid())
+  tenantId            String
+  subscriptionId      String
+  providerPaymentId   String   @unique
+  amountPaise         Int
+  taxableAmountPaise  Int
+  gstAmountPaise      Int
+  gstInclusive        Boolean
+  gstRate             Decimal  @db.Decimal(5, 2)
+  customerGstin       String?
+  invoiceNumber       String
+  financialYear       String   @db.VarChar(9)
+  paidAt              DateTime @db.Timestamptz(6)
+  createdAt           DateTime @default(now()) @db.Timestamptz(6)
+
+  tenant       Tenant       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  subscription Subscription @relation(fields: [tenantId, subscriptionId], references: [tenantId, id], onDelete: Restrict)
+
+  @@unique([tenantId, id])
+  @@unique([tenantId, financialYear, invoiceNumber])
+  @@index([tenantId, paidAt])
+}
+
+model PaymentAttempt {
+  id                   String              @id @default(cuid())
+  tenantId             String
+  planCatalogId        String
+  subscriptionId       String?
+  clientRequestKey     String
+  razorpayOrderId      String?             @unique
+  razorpayPaymentId    String?             @unique
+  status               PaymentAttemptStatus @default(CREATING)
+  buyerBusinessName    String
+  buyerGstin           String?
+  planAmountPaise      Int
+  amountPaise          Int
+  taxableAmountPaise   Int
+  gstAmountPaise       Int
+  cgstPaise            Int
+  sgstPaise            Int
+  gstInclusive         Boolean
+  gstRate              Decimal             @db.Decimal(5, 2)
+  failureReason        String?
+  createdAt            DateTime            @default(now()) @db.Timestamptz(6)
+  paidAt               DateTime?           @db.Timestamptz(6)
+
+  tenant       Tenant      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  planCatalog  PlanCatalog @relation(fields: [planCatalogId], references: [id], onDelete: Restrict)
+  subscription Subscription? @relation(fields: [tenantId, subscriptionId], references: [tenantId, id], onDelete: Restrict)
+  invoice      SubscriptionInvoice?
+
+  @@unique([tenantId, id])
+  @@unique([tenantId, clientRequestKey])
+  @@index([tenantId, status, createdAt])
+}
+
+model PlatformSequenceCounter {
+  id           String   @id @default(cuid())
+  financialYear String  @unique @db.VarChar(9)
+  value        Int      @default(0)
+  updatedAt    DateTime @updatedAt @db.Timestamptz(6)
+}
+
+model SubscriptionInvoice {
+  id                  String   @id @default(cuid())
+  tenantId            String
+  subscriptionId      String
+  paymentAttemptId    String   @unique
+  invoiceNumber       String   @unique
+  financialYear      String   @db.VarChar(9)
+  buyerBusinessName  String
+  buyerGstin         String?
+  planName           String
+  planAmountPaise    Int
+  taxableAmountPaise Int
+  gstRate            Decimal  @db.Decimal(5, 2)
+  gstInclusive       Boolean
+  cgstPaise          Int
+  sgstPaise          Int
+  totalPaise         Int
+  paidAt             DateTime @db.Timestamptz(6)
+  createdAt          DateTime @default(now()) @db.Timestamptz(6)
+
+  tenant         Tenant         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  subscription   Subscription   @relation(fields: [tenantId, subscriptionId], references: [tenantId, id], onDelete: Restrict)
+  paymentAttempt PaymentAttempt @relation(fields: [paymentAttemptId], references: [id], onDelete: Restrict)
+
+  @@unique([tenantId, id])
+  @@index([tenantId, financialYear, invoiceNumber])
+  @@index([tenantId, paidAt])
+}
+
+model IntegrationConnection {
+  id                    String              @id @default(cuid())
+  tenantId              String
+  provider              IntegrationProvider
+  isEnabled             Boolean             @default(false)
+  credentialsCiphertext String?             @db.Text
+  createdAt             DateTime            @default(now()) @db.Timestamptz(6)
+  updatedAt             DateTime            @updatedAt @db.Timestamptz(6)
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, id])
+  @@unique([tenantId, provider])
+}
+
+model WebhookEvent {
+  id             String         @id @default(cuid())
+  tenantId       String
+  provider       WebhookProvider
+  idempotencyKey String
+  rawBody        Bytes          @db.ByteA
+  signature      String?
+  status         WebhookStatus  @default(RECEIVED)
+  receivedAt     DateTime       @default(now()) @db.Timestamptz(6)
+  processedAt    DateTime?      @db.Timestamptz(6)
+  failureReason  String?
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, id, provider])
+  @@unique([tenantId, provider, idempotencyKey])
+  @@index([tenantId, status, receivedAt])
+}

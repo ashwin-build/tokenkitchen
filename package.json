@@ -1,0 +1,45 @@
+{
+	"name": "tokenkitchen",
+	"version": "0.1.0",
+	"private": true,
+	"scripts": {
+		"dev": "next dev",
+		"build": "next build",
+		"start": "node scripts/start.mjs",
+		"lint": "eslint .",
+		"typecheck": "tsc --noEmit",
+		"test": "vitest run",
+		"test:watch": "vitest",
+		"test:integration": "vitest run --config vitest.integration.config.mts",
+		"db:generate": "prisma generate",
+		"db:migrate": "prisma migrate dev",
+		"db:deploy": "prisma migrate deploy",
+		"db:seed": "prisma db seed"
+	},
+	"dependencies": {
+		"@clerk/nextjs": "^7.9.10",
+		"@prisma/adapter-pg": "^7.10.0",
+		"@prisma/client": "^7.10.0",
+		"next": "^16.3.8",
+		"pg": "^8.16.3",
+		"react": "^19.2.0",
+		"react-dom": "^19.2.0",
+		"zod": "^4.1.12"
+	},
+	"devDependencies": {
+		"@tailwindcss/postcss": "^4.3.3",
+		"@types/node": "^24.10.1",
+		"@types/pg": "^8.15.5",
+		"@types/react": "^19.2.7",
+		"@types/react-dom": "^19.2.3",
+		"dotenv": "^17.2.3",
+		"eslint": "^9.39.1",
+		"eslint-config-next": "^16.3.8",
+		"postcss": "^8.5.6",
+		"prisma": "^7.10.0",
+		"tailwindcss": "^4.3.3",
+		"tsx": "^4.20.6",
+		"typescript": "^5.9.3",
+		"vitest": "^5.0.3"
+	}
+}

@@ -1,0 +1,12 @@
+.next/
+node_modules/
+src/generated/prisma/
+coverage/
+playwright-report/
+test-results/
+.env
+.env.*
+!.env.example
+license-private.pem
+*.log
+*.tsbuildinfo
