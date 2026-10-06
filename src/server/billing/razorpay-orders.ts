@@ -156,14 +156,17 @@ export async function createRazorpayOrderForMembership(
       ok: response.ok,
       body: raw,
       expectedAmount: tax.totalPaise,
+      planId: plan.id,
     });
     const verifiedOrder = razorpayOrderSchema.safeParse(raw);
     if (!response.ok || !verifiedOrder.success || verifiedOrder.data.amount !== tax.totalPaise) {
+      const razorpayErrMsg = (raw as { error?: { description?: string } })?.error?.description;
+      const failureReason = razorpayErrMsg || en.errors.checkoutFailed;
       await systemTenantDatabase(membership.tenantId).paymentAttempt.updateMany({
         where: { id: attempt.id, status: "CREATING" },
-        data: { status: "FAILED", failureReason: en.errors.checkoutFailed },
+        data: { status: "FAILED", failureReason },
       });
-      throw new SubscriptionCheckoutError(en.errors.checkoutFailed);
+      throw new SubscriptionCheckoutError(razorpayErrMsg ? `Razorpay API error (${response.status}): ${razorpayErrMsg}` : en.errors.checkoutFailed);
     }
 
     const razorpayOrderId = verifiedOrder.data.id;

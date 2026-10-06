@@ -103,7 +103,7 @@ export function BillingClient({
               ))}
             </div>
             <div className="mt-5 grid gap-4 sm:grid-cols-[minmax(0,24rem)_auto] sm:items-end">
-              <label className="tk-field">{en.billing.gstinOptional}<input autoComplete="off" maxLength={15} onChange={(event) => setGstin(event.currentTarget.value.toUpperCase())} pattern="[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z][1-9A-Z]Z[0-9A-Z]" placeholder={en.billing.gstinPlaceholder} value={gstin} /></label>
+              <label className="tk-field">{en.billing.gstinOptional}<input autoComplete="off" maxLength={15} name="gstin" onChange={(event) => setGstin(event.currentTarget.value.toUpperCase())} pattern="[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z][1-9A-Z]Z[0-9A-Z]" placeholder={en.billing.gstinPlaceholder} value={gstin} /></label>
               <button className="tk-button-primary" disabled={pending || !scriptLoaded || !selectedPlanId} type="submit">{pending ? en.billing.preparingCheckout : en.billing.checkout}</button>
             </div>
             {state.message ? <p aria-live="polite" className="mt-3 text-sm text-[#d6402b]" role="alert">{state.message}</p> : null}

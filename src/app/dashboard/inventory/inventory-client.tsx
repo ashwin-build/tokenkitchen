@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { useActionState, useState } from "react";
-import { adjustStockAction, createPurchaseAction, initialInventoryActionState, type InventoryActionState } from "@/server/inventory/actions";
+import { adjustStockAction, createPurchaseAction } from "@/server/inventory/actions";
+import { initialInventoryActionState, type InventoryActionState } from "@/server/inventory/action-state";
 import { calculatePurchaseLinePaise } from "@/server/inventory/purchase-math";
 
 type Ingredient = {

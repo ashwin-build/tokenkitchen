@@ -5,13 +5,8 @@ import { z } from "zod";
 import { currentBillingMembership } from "@/server/billing/access";
 import { createPurchaseForMembership, adjustStockForMembership, InventoryServiceError } from "@/server/inventory/services";
 
-export type InventoryActionState = {
-  status: "idle" | "success" | "error";
-  message: string;
-  purchase: { id: string; totalPaise: number; paidPaise: number; balancePaise: number; supplierName: string } | null;
-};
+import type { InventoryActionState } from "@/server/inventory/action-state";
 
-export const initialInventoryActionState: InventoryActionState = { status: "idle", message: "", purchase: null };
 
 function actionError(error: unknown): string {
   if (error instanceof z.ZodError) return error.issues[0]?.message ?? "Check the details and try again.";
